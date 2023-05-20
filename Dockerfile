@@ -1,0 +1,1 @@
+FROM postgres:12.7 as transient-db

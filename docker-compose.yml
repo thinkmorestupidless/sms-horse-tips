@@ -1,0 +1,17 @@
+version: "3.8"
+services:
+  postgres:
+    build:
+      context: .
+      target: transient-db
+    environment:
+      POSTGRES_USER: mark_callow_tips
+      POSTGRES_DB: mark_callow_tips
+      POSTGRES_PASSWORD: v4U4GUjLXqmWV
+    ports:
+      - "5432:5432"
+    volumes:
+      - db:/var/lib/postgres_test/data
+volumes:
+  db:
+    external: false
