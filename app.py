@@ -6,6 +6,7 @@ from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired, Length
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from twilio.rest import Client
 
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
@@ -20,6 +21,8 @@ csrf = CSRFProtect(app)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+twilio = Client(app.config['TWILIO_ACCOUNT_SID'], app.config['TWILIO_AUTH_TOKEN'])
 
 from models import *
 
@@ -49,6 +52,15 @@ def root():
         tip = Tip(horse=form.horse.data, time=form.time.data, meeting=form.meeting.data, min_price=form.min_price.data, bet_type=form.bet_type.data, stake=form.stake.data)
         db.session.add(tip)
         db.session.commit()
+
+        punters = db.session.query(Punter)
+        for punter in punters:
+            message = twilio.messages.create(
+                     body="Place {} on {} in the {} at {} don't take less than {}.  When you have placed the bet please CONFIRM it with us by replying to this message with the stake and price of the bet you placed".format(tip.stake, tip.horse, tip.time, tip.meeting, tip.min_price),
+                     from_='+447893951917',
+                     to=punter.phone_number
+                 )
+
         return redirect(url_for('root'))
     return render_template('index.html', form=form, tips=tips)
 
