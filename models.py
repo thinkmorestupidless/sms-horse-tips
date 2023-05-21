@@ -8,7 +8,6 @@ class Punter(db.Model):
     first_name = db.Column(db.String, nullable=False)
     surname = db.Column(db.String, nullable=False)
     phone_number = db.Column(db.String, nullable=False)
-    active = db.Column(db.Boolean, nullable=False)
     # surname = db.relationship('Question', backref='survey', lazy='dynamic')
 
     # def __init__(self):
