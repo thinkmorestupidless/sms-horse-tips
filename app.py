@@ -194,12 +194,12 @@ def handle_bet(body, from_number):
                     bet = Bet(punter_id=punter.id, tip_id=tip.id, stake=stake, price=price)
                     db.session.add(bet)
                     db.session.commit()
+
+                    response.message("We have recorded your bet of £{} at {}. Thank you".format(stake, price))
             else:
                 print("Unable to find punter with phone number {} for bet of {}@{}".format(from_number, stake, price))
         else: 
             print("Unable to find a tip to record bet of {}@{}".format(stake, price))
-        
-        response.message("We have recorded your bet of £{} at {}. Thank you".format(stake, price))
     else:
         print("received response '{}'".format(body))
         response.message("I'm sorry, I don't understand, someone will get in touch")
@@ -218,7 +218,7 @@ def handle_yes():
     if not stake.startswith('£'):
         stake = "£{}".format(stake)
     response = MessagingResponse()
-    response.message("Place {} ({}) on {} in the {} at {} don't take less than {}. When you have placed the bet please CONFIRM it with us by replying to this message with ONLY the stake and price of the bet you placed e.g. {} {}".format(stake, tip.bet_type, tip.horse, tip.time, tip.meeting, tip.min_price, stake, tip.min_price))
+    response.message("Place {} ({}) on {} in the {} at {} don't take less than {}. When you have placed the bet please CONFIRM it with us by replying to this message with ONLY the stake and price of the bet you placed e.g. {} {}".format(stake, tip.bet_type, tip.horse, tip.time, tip.meeting, tip.min_price, stake.replace(u'£', ''), tip.min_price))
     return str(response)
 
 
