@@ -187,7 +187,7 @@ def handle_bet(body, from_number):
         tip = db.session.query(Tip).order_by(Tip.id.desc()).first()
         if tip is not None:
             punter = db.session.query(Punter).filter(Punter.phone_number == from_number).first()
-            if punter is not None:
+            if punter is not None and not any(bet.tip_id == tip.id for bet in punter.bets):
                 bet = Bet(punter_id=punter.id, tip_id=tip.id, stake=stake, price=price)
                 db.session.add(bet)
                 db.session.commit()
@@ -215,7 +215,7 @@ def handle_yes():
     if not stake.startswith('£'):
         stake = "£{}".format(stake)
     response = MessagingResponse()
-    response.message("Place {} ({}) on {} in the {} at {} don't take less than {}. When you have placed the bet please CONFIRM it with us by replying to this message with ONLY the stake and price of the bet you placed e.g. £90 4/1".format(stake, tip.bet_type, tip.horse, tip.time, tip.meeting, tip.min_price))
+    response.message("Place {} ({}) on {} in the {} at {} don't take less than {}. When you have placed the bet please CONFIRM it with us by replying to this message with ONLY the stake and price of the bet you placed e.g. {} {}}".format(stake, tip.bet_type, tip.horse, tip.time, tip.meeting, tip.min_price, stake, tip.min_price))
     return str(response)
 
 
