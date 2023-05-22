@@ -8,6 +8,8 @@ class Punter(db.Model):
     first_name = db.Column(db.String, nullable=False)
     surname = db.Column(db.String, nullable=False)
     phone_number = db.Column(db.String, nullable=False)
+    bets = db.relationship('Bet', backref='punter', lazy='joined')
+
     # surname = db.relationship('Question', backref='survey', lazy='dynamic')
 
     # def __init__(self):
@@ -35,6 +37,7 @@ class Tip(db.Model):
     bet_type = db.Column(db.String, nullable=False)
     min_price = db.Column(db.String, nullable=False)
     stake = db.Column(db.String, nullable=False)
+    bets = db.relationship('Bet', backref='tip', lazy='joined')
 
     # kind = db.Column(db.Enum(TEXT, NUMERIC, BOOLEAN, name='question_kind'))
     # survey_id = db.Column(db.Integer, db.ForeignKey('surveys.id'))
@@ -56,6 +59,8 @@ class Bet(db.Model):
     tip_id = db.Column(db.String, nullable=False)
     stake = db.Column(db.String, nullable=False)
     price = db.Column(db.String, nullable=False)
+    tip_id = db.Column(db.Integer, db.ForeignKey('tips.id'))
+    punter_id = db.Column(db.Integer, db.ForeignKey('punters.id'))
 
     # content = db.Column(db.String, nullable=False)
     # session_id = db.Column(db.String, nullable=False)
