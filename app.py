@@ -3,10 +3,11 @@ import re
 from flask import Flask, render_template, redirect, request, url_for, flash
 from flask_bootstrap import Bootstrap5
 from flask_wtf import FlaskForm, CSRFProtect
-from wtforms import StringField, SubmitField, PasswordField
+from wtforms import StringField, SubmitField, EmailField, PasswordField, BooleanField
 from wtforms.validators import DataRequired, Length, Email
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_login import LoginManager, login_user, login_required, current_user, logout_user
 from twilio.rest import Client
 from twilio.twiml.messaging_response import MessagingResponse
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -25,16 +26,26 @@ csrf = CSRFProtect(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+from models import *
+
+login_manager = LoginManager()
+login_manager.login_view = 'login'
+login_manager.init_app(app)
+
 twilio = Client(app.config['TWILIO_ACCOUNT_SID'], app.config['TWILIO_AUTH_TOKEN'])
 
 response_regex = r'(\d*)\s+(\d*/\d*|\d\.\d)'
 
 
-from models import *
+@login_manager.user_loader
+def load_user(user_id):
+    # since the user_id is just the primary key of our user table, use it in the query for the user
+    return User.query.get(int(user_id))
 
 class LoginForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
+    email = EmailField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
+    remember = BooleanField('Remember Me')
     submit = SubmitField('Login')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -43,6 +54,7 @@ def login():
     if form.validate_on_submit():
         email = form.email.data
         password = form.password.data
+        remember = form.remember.data
 
         user = User.query.filter_by(email=email).first()
 
@@ -53,11 +65,12 @@ def login():
             return redirect(url_for('login')) # if the user doesn't exist or password is wrong, reload the page
 
         # if the above check passes, then we know the user has the right credentials
-        return redirect(url_for('profile'))
+        login_user(user, remember=remember)
+        return redirect(url_for('root'))
     return render_template('login.html', form=form)
 
 class SignupForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
+    email = EmailField('Email', validators=[DataRequired(), Email()])
     name = StringField('Name', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired(), Length(8, 20)])
     submit = SubmitField('Signup')
@@ -87,12 +100,15 @@ def signup():
     return render_template('signup.html', form=form)
 
 @app.route('/logout')
+@login_required
 def logout():
-    return 'Logout'
+    logout_user()
+    return redirect(url_for('login'))
 
 @app.route('/profile')
+@login_required
 def profile():
-    return render_template('profile.html')
+    return render_template('profile.html', name=current_user.name)
 
 
 class TipForm(FlaskForm):
@@ -113,6 +129,7 @@ class PunterForm(FlaskForm):
 
 
 @app.route('/', methods=['GET', 'POST'])
+@login_required
 def root():
     tips = db.session.query(Tip).order_by(Tip.id)
     form = TipForm()
@@ -134,6 +151,7 @@ def root():
 
 
 @app.route('/punters/', methods=['GET', 'POST'])
+@login_required
 def punters():
     punters = db.session.query(Punter).order_by(Punter.id)
     form = PunterForm()        
