@@ -49,6 +49,7 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 @app.route('/login', methods=['GET', 'POST'])
+@csrf.exempt
 def login():
     form = LoginForm()
     if form.validate_on_submit():
@@ -76,6 +77,7 @@ class SignupForm(FlaskForm):
     submit = SubmitField('Signup')
 
 @app.route('/signup', methods=['GET', 'POST'])
+@csrf.exempt
 def signup():
     form = SignupForm()
     if form.validate_on_submit():
@@ -130,6 +132,7 @@ class PunterForm(FlaskForm):
 
 @app.route('/', methods=['GET', 'POST'])
 @login_required
+@csrf.exempt
 def root():
     tips = db.session.query(Tip).order_by(Tip.id)
     form = TipForm()
@@ -151,6 +154,7 @@ def root():
 
 
 @app.route('/punters/', methods=['GET', 'POST'])
+@csrf.exempt
 @login_required
 def punters():
     punters = db.session.query(Punter).order_by(Punter.id)
