@@ -164,7 +164,6 @@ def punters():
 
 
 @app.route('/incoming_sms', methods=['POST'])
-@csrf.exempt
 def incoming_sms():
     body = request.values['Body']
     if body.lower() == "yes":
