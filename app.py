@@ -17,7 +17,7 @@ app.config.from_object(os.environ['APP_SETTINGS'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 import secrets
-secret_key = secrets.token_urlsafe(16)
+secret_key = app.config['SECRET_KEY']
 app.secret_key = secret_key
 
 bootstrap = Bootstrap5(app)
