@@ -1,14 +1,15 @@
 import os
 import re
-from flask import Flask, render_template, redirect, request, url_for
+from flask import Flask, render_template, redirect, request, url_for, flash
 from flask_bootstrap import Bootstrap5
 from flask_wtf import FlaskForm, CSRFProtect
-from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired, Length
+from wtforms import StringField, SubmitField, PasswordField
+from wtforms.validators import DataRequired, Length, Email
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from twilio.rest import Client
 from twilio.twiml.messaging_response import MessagingResponse
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
@@ -31,10 +32,59 @@ response_regex = r'(\d*)\s+(\d*/\d*|\d\.\d)'
 
 from models import *
 
+class LoginForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Login')
 
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    return render_template('login.html')
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+
+        user = User.query.filter_by(email=email).first()
+
+        # check if the user actually exists
+        # take the user-supplied password, hash it, and compare it to the hashed password in the database
+        if not user or not check_password_hash(user.password, password):
+            flash('Please check your login details and try again.')
+            return redirect(url_for('login')) # if the user doesn't exist or password is wrong, reload the page
+
+        # if the above check passes, then we know the user has the right credentials
+        return redirect(url_for('profile'))
+    return render_template('login.html', form=form)
+
+class SignupForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    name = StringField('Name', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired(), Length(8, 20)])
+    submit = SubmitField('Signup')
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    form = SignupForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        name = form.name.data
+        password = form.password.data
+
+        user = User.query.filter_by(email=email).first() # if this returns a user, then the email already exists in database
+
+        if user: # if a user is found, we want to redirect back to signup page so user can try again
+            flash('Email address already exists')
+            return redirect(url_for('signup'))
+
+        # create a new user with the form data. Hash the password so the plaintext version isn't saved.
+        new_user = User(email=email, name=name, password=generate_password_hash(password, method='scrypt'))
+
+        # add the new user to the database
+        db.session.add(new_user)
+        db.session.commit()
+
+        return redirect(url_for('login'))
+    return render_template('signup.html', form=form)
 
 @app.route('/logout')
 def logout():
