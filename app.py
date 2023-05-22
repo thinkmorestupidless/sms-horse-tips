@@ -31,7 +31,6 @@ from models import *
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
-login_manager.session_protection = None
 
 twilio = Client(app.config['TWILIO_ACCOUNT_SID'], app.config['TWILIO_AUTH_TOKEN'])
 
