@@ -28,7 +28,21 @@ twilio = Client(app.config['TWILIO_ACCOUNT_SID'], app.config['TWILIO_AUTH_TOKEN'
 
 response_regex = r'(\d*)\s+(\d*/\d*|\d\.\d)'
 
+
 from models import *
+
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    return 'Logout'
+
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
 
 
 class TipForm(FlaskForm):
