@@ -7,7 +7,6 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URI']
     TWILIO_ACCOUNT_SID = os.environ['TWILIO_ACCOUNT_SID']
     TWILIO_AUTH_TOKEN = os.environ['TWILIO_AUTH_TOKEN']
-    SESSION_COOKIE_SECURE = False
 
 class ProductionConfig(Config):
     pass
