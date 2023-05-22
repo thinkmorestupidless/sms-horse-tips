@@ -21,7 +21,7 @@ secret_key = secrets.token_urlsafe(16)
 app.secret_key = secret_key
 
 bootstrap = Bootstrap5(app)
-csrf = CSRFProtect(app)
+# csrf = CSRFProtect(app)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
