@@ -187,10 +187,13 @@ def handle_bet(body, from_number):
         tip = db.session.query(Tip).order_by(Tip.id.desc()).first()
         if tip is not None:
             punter = db.session.query(Punter).filter(Punter.phone_number == from_number).first()
-            if punter is not None and not any(bet.tip_id == tip.id for bet in punter.bets):
-                bet = Bet(punter_id=punter.id, tip_id=tip.id, stake=stake, price=price)
-                db.session.add(bet)
-                db.session.commit()
+            if punter is not None:
+                if any(bet.tip_id == tip.id for bet in punter.bets):
+                    response.message("We have already recorded a response from you for this tip")
+                else:
+                    bet = Bet(punter_id=punter.id, tip_id=tip.id, stake=stake, price=price)
+                    db.session.add(bet)
+                    db.session.commit()
             else:
                 print("Unable to find punter with phone number {} for bet of {}@{}".format(from_number, stake, price))
         else: 
