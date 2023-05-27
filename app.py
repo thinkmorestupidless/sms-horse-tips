@@ -166,18 +166,30 @@ def punters():
 @app.route('/incoming_sms', methods=['POST'])
 @csrf.exempt
 def incoming_sms():
+    from_number = request.values['From']
     body = request.values['Body']
-    if body.lower() == "yes":
-        return handle_yes()
-    elif body.lower() == "no":
-        return handle_no()
-    else:
-        from_number = request.values['From']
-        return handle_bet(body, from_number)
-
-
-def handle_bet(body, from_number):
+    
+    print("Incoming SMS [{} => {}]".format(from_number, body))
+    
     response = MessagingResponse()
+    
+    punter = db.session.query(Punter).filter(Punter.phone_number == from_number).first()
+    if punter is not None:
+        print("{} {} [{}] said '{}'".format(punter.first_name, punter.surname, from_number, body))
+        
+        if body.lower() == "yes":
+            return handle_yes(response)
+        elif body.lower() == "no":
+            return handle_no(response)
+        else:
+            return handle_bet(response, body, punter)
+    else:
+        print("Unable to find punter with phone number {}".format(from_number))
+        response.message("I'm sorry I don't know who you are")
+        return str(response)
+        
+
+def handle_bet(response, body, punter):    
     cleaned_body = body.replace(u'£', '').replace(u'@', ' ')
     match = re.search(response_regex, cleaned_body)
     stake = match.group(1).strip()
@@ -185,45 +197,35 @@ def handle_bet(body, from_number):
     if match:
         print("we have a match £{} @ {}".format(stake, price)) 
         tip = db.session.query(Tip).order_by(Tip.id.desc()).first()
-        if tip is not None:
-            punter = db.session.query(Punter).filter(Punter.phone_number == from_number).first()
-            if punter is not None:
-                if any(bet.tip_id == tip.id for bet in punter.bets):
-                    response.message("We have already recorded a response from you for this tip")
-                else:
-                    bet = Bet(punter_id=punter.id, tip_id=tip.id, stake=stake, price=price)
-                    db.session.add(bet)
-                    db.session.commit()
-
-                    response.message("We have recorded your bet of £{} at {}. Thank you".format(stake, price))
+        if tip is not None:           
+            if any(bet.tip_id == tip.id for bet in punter.bets):
+                response.message("We have already recorded a response from you for this tip")
             else:
-                print("Unable to find punter with phone number {} for bet of {}@{}".format(from_number, stake, price))
+                bet = Bet(punter_id=punter.id, tip_id=tip.id, stake=stake, price=price)
+                db.session.add(bet)
+                db.session.commit()
+
+                response.message("We have recorded your bet of £{} at {}. Thank you".format(stake, price))
+
         else: 
             print("Unable to find a tip to record bet of {}@{}".format(stake, price))
+            response.message("Unable to find a tip to record your bet against")
     else:
         print("received response '{}'".format(body))
         response.message("I'm sorry, I don't understand, someone will get in touch")
     return str(response)
 
 
-def handle_missing_from_number():
-    response = MessagingResponse()
-    response.message("Something went wrong on our end, someone will be in touch shortly")
-    return str(response)
-
-
-def handle_yes():
+def handle_yes(response):
     tip = db.session.query(Tip).order_by(Tip.id.desc()).first()
     stake = tip.stake
     if not stake.startswith('£'):
         stake = "£{}".format(stake)
-    response = MessagingResponse()
     response.message("Place {} ({}) on {} in the {} at {} don't take less than {}. When you have placed the bet please CONFIRM it with us by replying to this message with ONLY the stake and price of the bet you placed e.g. {} {}".format(stake, tip.bet_type, tip.horse, tip.time, tip.meeting, tip.min_price, stake.replace(u'£', ''), tip.min_price))
     return str(response)
 
 
-def handle_no():
-    response = MessagingResponse()
+def handle_no(response):
     response.message("Thanks, we'll be in touch next time we have a tip")
     return str(response)
 
