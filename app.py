@@ -176,13 +176,16 @@ def incoming_sms():
     punter = db.session.query(Punter).filter(Punter.phone_number == from_number).first()
     if punter is not None:
         print("{} {} [{}] said '{}'".format(punter.first_name, punter.surname, from_number, body))
-        
-        if body.lower() == "yes":
-            return handle_yes(response)
-        elif body.lower() == "no":
-            return handle_no(response)
+        stripped_body = body.strip()
+        if stripped_body is not None:
+            if body.lower() == "yes":
+                return handle_yes(response)
+            elif body.lower() == "no":
+                return handle_no(response)
+            else:
+                return handle_bet(response, body, punter)
         else:
-            return handle_bet(response, body, punter)
+            response.message("I'm sorry, but you seem to have sent an empty message")
     else:
         print("Unable to find punter with phone number {}".format(from_number))
         response.message("I'm sorry I don't know who you are")
