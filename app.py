@@ -178,9 +178,9 @@ def incoming_sms():
         print("{} {} [{}] said '{}'".format(punter.first_name, punter.surname, from_number, body))
         stripped_body = body.strip()
         if stripped_body is not None:
-            if body.lower() == "yes":
+            if stripped_body[:3] == "yes":
                 return handle_yes(response)
-            elif body.lower() == "no":
+            elif stripped_body[:2] == "no":
                 return handle_no(response)
             else:
                 return handle_bet(response, body, punter)
