@@ -176,7 +176,7 @@ def incoming_sms():
     punter = db.session.query(Punter).filter(Punter.phone_number == from_number).first()
     if punter is not None:
         print("{} {} [{}] said '{}'".format(punter.first_name, punter.surname, from_number, body))
-        stripped_body = body.strip()
+        stripped_body = body.strip().lower()
         if stripped_body is not None:
             if stripped_body[:3] == "yes":
                 return handle_yes(response)
